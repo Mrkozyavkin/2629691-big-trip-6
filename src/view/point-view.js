@@ -1,4 +1,14 @@
-import {createElement} from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
+
+function createSelectedOfferTemplate(offer) {
+  return (
+    `<li class="event__offer">
+      <span class="event__offer-title">${offer.title}</span>
+      &plus;&euro;&nbsp;
+      <span class="event__offer-price">${offer.price}</span>
+    </li>`
+  );
+}
 
 function createSelectedOffersTemplate(selectedOffers) {
   if (selectedOffers.length === 0) {
@@ -8,13 +18,7 @@ function createSelectedOffersTemplate(selectedOffers) {
   return (
     `<h4 class="visually-hidden">Offers:</h4>
     <ul class="event__selected-offers">
-      ${selectedOffers.map((offer) => (
-      `<li class="event__offer">
-          <span class="event__offer-title">${offer.title}</span>
-          &plus;&euro;&nbsp;
-          <span class="event__offer-price">${offer.price}</span>
-        </li>`
-    )).join('')}
+      ${selectedOffers.map((offer) => createSelectedOfferTemplate(offer)).join('')}
     </ul>`
   );
 }
@@ -63,27 +67,24 @@ function createPointTemplate(point) {
   );
 }
 
-export default class PointView {
-  #element = null;
+export default class PointView extends AbstractView {
   #point = null;
+  #handleEditClick = null;
 
-  constructor(point) {
+  constructor({point, onEditClick}) {
+    super();
     this.#point = point;
+    this.#handleEditClick = onEditClick;
+
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#editClickHandler);
   }
 
-  getTemplate() {
+  get template() {
     return createPointTemplate(this.#point);
   }
 
-  getElement() {
-    if (!this.#element) {
-      this.#element = createElement(this.getTemplate());
-    }
-
-    return this.#element;
-  }
-
-  removeElement() {
-    this.#element = null;
-  }
+  #editClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleEditClick();
+  };
 }

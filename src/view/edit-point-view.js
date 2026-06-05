@@ -1,4 +1,4 @@
-import {createElement} from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
 
 function createEventTypeTemplate(eventType, checkedType, pointId) {
   const isChecked = eventType === checkedType ? ' checked' : '';
@@ -195,27 +195,32 @@ function createEditPointTemplate(point) {
   );
 }
 
-export default class EditPointView {
-  #element = null;
+export default class EditPointView extends AbstractView {
   #point = null;
+  #handleFormSubmit = null;
+  #handleRollupClick = null;
 
-  constructor(point) {
+  constructor({point, onFormSubmit, onRollupClick}) {
+    super();
     this.#point = point;
+    this.#handleFormSubmit = onFormSubmit;
+    this.#handleRollupClick = onRollupClick;
+
+    this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#rollupClickHandler);
   }
 
-  getTemplate() {
+  get template() {
     return createEditPointTemplate(this.#point);
   }
 
-  getElement() {
-    if (!this.#element) {
-      this.#element = createElement(this.getTemplate());
-    }
+  #formSubmitHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleFormSubmit();
+  };
 
-    return this.#element;
-  }
-
-  removeElement() {
-    this.#element = null;
-  }
+  #rollupClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleRollupClick();
+  };
 }
