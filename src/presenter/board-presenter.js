@@ -6,79 +6,53 @@ import PointView from '../view/point-view.js';
 import EditPointView from '../view/edit-point-view.js';
 import NewPointView from '../view/new-point-view.js';
 
-const POINTS = [
-  {
-    type: 'taxi',
-    title: 'Taxi Amsterdam',
-    date: 'MAR 18',
-    dateTime: '2019-03-18',
-    startTime: '10:30',
-    endTime: '11:00',
-    startDateTime: '2019-03-18T10:30',
-    endDateTime: '2019-03-18T11:00',
-    duration: '30M',
-    price: '20',
-    isFavorite: true,
-    selectedOffers: [
-      {
-        title: 'Order Uber',
-        price: '20',
-      },
-    ],
-  },
-  {
-    type: 'flight',
-    title: 'Flight Chamonix',
-    date: 'MAR 18',
-    dateTime: '2019-03-18',
-    startTime: '12:25',
-    endTime: '13:35',
-    startDateTime: '2019-03-18T12:25',
-    endDateTime: '2019-03-18T13:35',
-    duration: '01H 10M',
-    price: '160',
-    isFavorite: false,
-    selectedOffers: [
-      {
-        title: 'Add luggage',
-        price: '50',
-      },
-      {
-        title: 'Switch to comfort',
-        price: '80',
-      },
-    ],
-  },
-  {
-    type: 'drive',
-    title: 'Drive Chamonix',
-    date: 'MAR 18',
-    dateTime: '2019-03-18',
-    startTime: '14:30',
-    endTime: '16:05',
-    startDateTime: '2019-03-18T14:30',
-    endDateTime: '2019-03-18T16:05',
-    duration: '01H 35M',
-    price: '160',
-    isFavorite: true,
-    selectedOffers: [
-      {
-        title: 'Rent a car',
-        price: '200',
-      },
-    ],
-  },
-];
-
 const POINTS_COUNT = 3;
+
+function getDestinationById(destinations, destinationId) {
+  return destinations.find((destination) => destination.id === destinationId);
+}
+
+function getOffersByType(offers, type) {
+  return offers.filter((offer) => offer.type === type);
+}
+
+function getSelectedOffers(offers, offerIds) {
+  return offers.filter((offer) => offerIds.includes(offer.id));
+}
+
+function createPointData(point, destinations, offers) {
+  const destination = getDestinationById(destinations, point.destinationId);
+
+  return {
+    ...point,
+    destination,
+    title: `${point.type} ${destination.name}`,
+    selectedOffers: getSelectedOffers(offers, point.offerIds),
+  };
+}
+
+function createFormData(point, destinations, offers, eventTypes) {
+  const destination = getDestinationById(destinations, point.destinationId);
+
+  return {
+    ...point,
+    destination,
+    availableOffers: getOffersByType(offers, point.type),
+    selectedOffers: getSelectedOffers(offers, point.offerIds),
+    destinations,
+    eventTypes,
+  };
+}
 
 export default class BoardPresenter {
   #boardContainer = null;
+  #pointsModel = null;
   #tripEventsComponent = new TripEventsView();
   #tripEventsListComponent = new TripEventsListView();
 
-  constructor({boardContainer}) {
+  constructor({boardContainer, pointsModel}) {
     this.#boardContainer = boardContainer;
+    this.#pointsModel = pointsModel;
   }
 
   init() {
@@ -92,19 +66,39 @@ export default class BoardPresenter {
   }
 
   #renderEditPoint() {
-    render(new EditPointView(), this.#tripEventsListComponent.getElement());
+    const editPoint = createFormData(
+      this.#pointsModel.editPoint,
+      this.#pointsModel.destinations,
+      this.#pointsModel.offers,
+      this.#pointsModel.eventTypes,
+    );
+
+    render(new EditPointView(editPoint), this.#tripEventsListComponent.getElement());
   }
 
   #renderNewPoint() {
-    render(new NewPointView(), this.#tripEventsListComponent.getElement());
+    const newPoint = createFormData(
+      this.#pointsModel.newPoint,
+      this.#pointsModel.destinations,
+      this.#pointsModel.offers,
+      this.#pointsModel.eventTypes,
+    );
+
+    render(new NewPointView(newPoint), this.#tripEventsListComponent.getElement());
   }
 
   #renderPoint(point) {
-    render(new PointView(point), this.#tripEventsListComponent.getElement());
+    const pointData = createPointData(
+      point,
+      this.#pointsModel.destinations,
+      this.#pointsModel.offers,
+    );
+
+    render(new PointView(pointData), this.#tripEventsListComponent.getElement());
   }
 
   #renderPoints() {
-    POINTS.slice(0, POINTS_COUNT).forEach((point) => {
+    this.#pointsModel.points.slice(0, POINTS_COUNT).forEach((point) => {
       this.#renderPoint(point);
     });
   }
