@@ -1,4 +1,4 @@
-import {createElement} from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
 
 function createEventTypeTemplate(eventType, checkedType, pointId) {
   const isChecked = eventType === checkedType ? ' checked' : '';
@@ -192,27 +192,15 @@ function createNewPointTemplate(point) {
   );
 }
 
-export default class NewPointView {
-  #element = null;
+export default class NewPointView extends AbstractView {
   #point = null;
 
   constructor(point) {
+    super();
     this.#point = point;
   }
 
-  getTemplate() {
+  get template() {
     return createNewPointTemplate(this.#point);
-  }
-
-  getElement() {
-    if (!this.#element) {
-      this.#element = createElement(this.getTemplate());
-    }
-
-    return this.#element;
-  }
-
-  removeElement() {
-    this.#element = null;
   }
 }
