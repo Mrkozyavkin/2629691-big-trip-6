@@ -12,6 +12,7 @@ function createSortItemTemplate(sort) {
         type="radio"
         name="trip-sort"
         value="sort-${sort.type}"
+        data-sort-type="${sort.type}"
         ${checkedAttribute}
         ${disabledAttribute}
       >
@@ -36,13 +37,26 @@ function createSortTemplate(sorts) {
 
 export default class SortView extends AbstractView {
   #sorts = null;
+  #handleSortTypeChange = null;
 
-  constructor({sorts}) {
+  constructor({sorts, onSortTypeChange}) {
     super();
     this.#sorts = sorts;
+    this.#handleSortTypeChange = onSortTypeChange;
+
+    this.element.addEventListener('change', this.#sortTypeChangeHandler);
   }
 
   get template() {
     return createSortTemplate(this.#sorts);
   }
+
+  #sortTypeChangeHandler = (evt) => {
+    if (!evt.target.classList.contains('trip-sort__input')) {
+      return;
+    }
+
+    evt.preventDefault();
+    this.#handleSortTypeChange(evt.target.dataset.sortType);
+  };
 }
