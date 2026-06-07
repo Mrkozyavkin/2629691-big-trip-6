@@ -166,7 +166,8 @@ function createEditPointTemplate(point) {
             <input
               class="event__input  event__input--price"
               id="event-price-${point.id}"
-              type="text"
+              type="number"
+              min="0"
               name="event-price"
               value="${point.price}"
             >
@@ -236,6 +237,7 @@ export default class EditPointView extends AbstractStatefulView {
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#rollupClickHandler);
     this.element.querySelector('.event__type-group').addEventListener('change', this.#eventTypeChangeHandler);
     this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationChangeHandler);
+    this.element.querySelector('.event__input--price').addEventListener('input', this.#priceInputHandler);
 
     this.#setStartDatepicker();
     this.#setEndDatepicker();
@@ -314,6 +316,12 @@ export default class EditPointView extends AbstractStatefulView {
     this.updateElement({
       destinationId: destination.id,
       destination,
+    });
+  };
+
+  #priceInputHandler = (evt) => {
+    this._setState({
+      price: Number(evt.target.value),
     });
   };
 

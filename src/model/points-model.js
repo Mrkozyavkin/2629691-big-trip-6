@@ -1,17 +1,21 @@
 import Observable from '../framework/observable.js';
+import {EVENT_TYPES, UpdateType} from '../const.js';
 import {filters} from '../mock/filter.js';
-import {destinations, editPoint, eventTypes, newPoint, offers, points} from '../mock/point.js';
 import {sorts} from '../mock/sort.js';
 
 export default class PointsModel extends Observable {
-  #points = points;
-  #offers = offers;
-  #destinations = destinations;
-  #eventTypes = eventTypes;
-  #newPoint = newPoint;
-  #editPoint = editPoint;
+  #points = [];
+  #offers = [];
+  #destinations = [];
+  #eventTypes = EVENT_TYPES;
   #filters = filters;
   #sorts = sorts;
+  #tripApiService = null;
+
+  constructor({tripApiService}) {
+    super();
+    this.#tripApiService = tripApiService;
+  }
 
   get points() {
     return this.#points;
@@ -29,14 +33,6 @@ export default class PointsModel extends Observable {
     return this.#eventTypes;
   }
 
-  get newPoint() {
-    return this.#newPoint;
-  }
-
-  get editPoint() {
-    return this.#editPoint;
-  }
-
   get filters() {
     return this.#filters;
   }
@@ -45,20 +41,42 @@ export default class PointsModel extends Observable {
     return this.#sorts;
   }
 
-  updatePoint(updateType, updatedPoint) {
+  async init() {
+    try {
+      const [points, destinations, offers] = await Promise.all([
+        this.#tripApiService.points,
+        this.#tripApiService.destinations,
+        this.#tripApiService.offers,
+      ]);
+
+      this.#points = points;
+      this.#destinations = destinations;
+      this.#offers = offers;
+    } catch (err) {
+      this.#points = [];
+      this.#destinations = [];
+      this.#offers = [];
+    }
+
+    this._notify(UpdateType.INIT);
+  }
+
+  async updatePoint(updateType, updatedPoint) {
     const index = this.#points.findIndex((point) => point.id === updatedPoint.id);
 
     if (index === -1) {
       throw new Error('Can\'t update unexisting point');
     }
 
+    const response = await this.#tripApiService.updatePoint(updatedPoint);
+
     this.#points = [
       ...this.#points.slice(0, index),
-      updatedPoint,
+      response,
       ...this.#points.slice(index + 1),
     ];
 
-    this._notify(updateType, updatedPoint);
+    this._notify(updateType, response);
   }
 
   addPoint(updateType, newPointData) {

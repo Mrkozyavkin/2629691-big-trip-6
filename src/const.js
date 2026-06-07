@@ -1,4 +1,5 @@
 const UpdateType = {
+  INIT: 'INIT',
   PATCH: 'PATCH',
   MINOR: 'MINOR',
   MAJOR: 'MAJOR',
@@ -17,4 +18,6 @@ const FilterType = {
   PAST: 'past',
 };
 
-export {FilterType, UpdateType, UserAction};
+const EVENT_TYPES = ['taxi', 'bus', 'train', 'ship', 'drive', 'flight', 'check-in', 'sightseeing', 'restaurant'];
+
+export {EVENT_TYPES, FilterType, UpdateType, UserAction};

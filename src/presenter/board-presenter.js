@@ -5,6 +5,7 @@ import SortView from '../view/sort-view.js';
 import TripEventsView from '../view/trip-events-view.js';
 import TripEventsListView from '../view/trip-events-list-view.js';
 import NoPointView from '../view/no-point-view.js';
+import LoadingView from '../view/loading-view.js';
 import PointPresenter from './point-presenter.js';
 
 const POINTS_COUNT = 3;
@@ -40,10 +41,12 @@ export default class BoardPresenter {
   #tripEventsListComponent = new TripEventsListView();
   #sortComponent = null;
   #noPointComponent = null;
+  #loadingComponent = new LoadingView();
 
   #pointPresenters = new Map();
   #points = [];
   #currentSortType = SortType.DAY;
+  #isLoading = true;
 
   constructor({boardContainer, pointsModel, filterModel}) {
     this.#boardContainer = boardContainer;
@@ -88,6 +91,11 @@ export default class BoardPresenter {
   }
 
   #renderBoard() {
+    if (this.#isLoading) {
+      this.#renderLoading();
+      return;
+    }
+
     if (this.#points.length === 0) {
       this.#renderNoPoints();
       return;
@@ -95,6 +103,10 @@ export default class BoardPresenter {
 
     this.#renderSort();
     this.#renderPointsList();
+  }
+
+  #renderLoading() {
+    render(this.#loadingComponent, this.#tripEventsComponent.element);
   }
 
   #renderSort() {
@@ -149,6 +161,7 @@ export default class BoardPresenter {
 
     remove(this.#sortComponent);
     remove(this.#noPointComponent);
+    remove(this.#loadingComponent);
     remove(this.#tripEventsListComponent);
 
     this.#tripEventsListComponent = new TripEventsListView();
@@ -183,6 +196,12 @@ export default class BoardPresenter {
       case UpdateType.MAJOR:
         this.#clearBoard();
         this.#currentSortType = SortType.DAY;
+        this.#points = this.#getFilteredPoints();
+        this.#renderBoard();
+        break;
+      case UpdateType.INIT:
+        this.#isLoading = false;
+        this.#clearBoard();
         this.#points = this.#getFilteredPoints();
         this.#renderBoard();
         break;
