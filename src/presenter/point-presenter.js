@@ -8,10 +8,6 @@ function getDestinationById(destinations, destinationId) {
   return destinations.find((destination) => destination.id === destinationId);
 }
 
-function getOffersByType(offers, type) {
-  return offers.filter((offer) => offer.type === type);
-}
-
 function getSelectedOffers(offers, offerIds) {
   return offers.filter((offer) => offerIds.includes(offer.id));
 }
@@ -33,7 +29,7 @@ function createFormData(point, destinations, offers, eventTypes) {
   return {
     ...point,
     destination,
-    availableOffers: getOffersByType(offers, point.type),
+    offers,
     selectedOffers: getSelectedOffers(offers, point.offerIds),
     destinations,
     eventTypes,
@@ -103,7 +99,7 @@ export default class PointPresenter {
     }
 
     if (this.#pointContainer.contains(previousEditPointComponent.element)) {
-      replace(this.#editPointComponent, previousEditPointComponent);
+      replace(this.#pointComponent, previousEditPointComponent);
     }
 
     remove(previousPointComponent);
@@ -137,8 +133,8 @@ export default class PointPresenter {
     this.#replacePointToForm();
   };
 
-  #handleFormSubmit = () => {
-    this.#replaceFormToPoint();
+  #handleFormSubmit = (updatedPoint) => {
+    this.#handleDataChange(updatedPoint);
   };
 
   #handleRollupClick = () => {

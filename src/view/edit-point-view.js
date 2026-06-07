@@ -1,4 +1,8 @@
-import AbstractView from '../framework/view/abstract-view.js';
+import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
+
+function getDestinationByName(destinations, destinationName) {
+  return destinations.find((destination) => destination.name === destinationName);
+}
 
 function createEventTypeTemplate(eventType, checkedType, pointId) {
   const isChecked = eventType === checkedType ? ' checked' : '';
@@ -27,9 +31,8 @@ function createDestinationOptionTemplate(destination) {
   return `<option value="${destination.name}"></option>`;
 }
 
-function createOfferTemplate(offer, selectedOffers, pointId) {
-  const hasSelectedOffer = selectedOffers.some((selectedOffer) => selectedOffer.id === offer.id);
-  const isChecked = hasSelectedOffer ? ' checked' : '';
+function createOfferTemplate(offer, offerIds, pointId) {
+  const isChecked = offerIds.includes(offer.id) ? ' checked' : '';
 
   return (
     `<div class="event__offer-selector">
@@ -66,8 +69,9 @@ function createDestinationsTemplate(destinations) {
 }
 
 function createOffersTemplate(point) {
-  return point.availableOffers
-    .map((offer) => createOfferTemplate(offer, point.selectedOffers, point.id))
+  return point.offers
+    .filter((offer) => offer.type === point.type)
+    .map((offer) => createOfferTemplate(offer, point.offerIds, point.id))
     .join('');
 }
 
@@ -195,32 +199,83 @@ function createEditPointTemplate(point) {
   );
 }
 
-export default class EditPointView extends AbstractView {
-  #point = null;
+export default class EditPointView extends AbstractStatefulView {
   #handleFormSubmit = null;
   #handleRollupClick = null;
 
   constructor({point, onFormSubmit, onRollupClick}) {
     super();
-    this.#point = point;
+    this._setState(EditPointView.parsePointToState(point));
     this.#handleFormSubmit = onFormSubmit;
     this.#handleRollupClick = onRollupClick;
 
-    this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
-    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#rollupClickHandler);
+    this._restoreHandlers();
   }
 
   get template() {
-    return createEditPointTemplate(this.#point);
+    return createEditPointTemplate(this._state);
+  }
+
+  _restoreHandlers() {
+    this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#rollupClickHandler);
+    this.element.querySelector('.event__type-group').addEventListener('change', this.#eventTypeChangeHandler);
+    this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationChangeHandler);
   }
 
   #formSubmitHandler = (evt) => {
     evt.preventDefault();
-    this.#handleFormSubmit();
+    this.#handleFormSubmit(EditPointView.parseStateToPoint(this._state));
   };
 
   #rollupClickHandler = (evt) => {
     evt.preventDefault();
     this.#handleRollupClick();
   };
+
+  #eventTypeChangeHandler = (evt) => {
+    if (!evt.target.classList.contains('event__type-input')) {
+      return;
+    }
+
+    evt.preventDefault();
+
+    this.updateElement({
+      type: evt.target.value,
+      offerIds: [],
+    });
+  };
+
+  #destinationChangeHandler = (evt) => {
+    evt.preventDefault();
+
+    const destination = getDestinationByName(this._state.destinations, evt.target.value);
+
+    if (!destination) {
+      return;
+    }
+
+    this.updateElement({
+      destinationId: destination.id,
+      destination,
+    });
+  };
+
+  static parsePointToState(point) {
+    return {
+      ...point,
+    };
+  }
+
+  static parseStateToPoint(state) {
+    const point = {...state};
+
+    delete point.offers;
+    delete point.destinations;
+    delete point.eventTypes;
+    delete point.destination;
+    delete point.selectedOffers;
+
+    return point;
+  }
 }
