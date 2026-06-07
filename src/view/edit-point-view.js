@@ -1,4 +1,9 @@
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
+import {getEditDate} from '../utils/point.js';
+
+const FLATPICKR_DATE_FORMAT = 'd/m/y H:i';
 
 function getDestinationByName(destinations, destinationName) {
   return destinations.find((destination) => destination.name === destinationName);
@@ -140,7 +145,7 @@ function createEditPointTemplate(point) {
               id="event-start-time-${point.id}"
               type="text"
               name="event-start-time"
-              value="${point.startTime}"
+              value="${getEditDate(point.startDateTime)}"
             >
             &mdash;
             <label class="visually-hidden" for="event-end-time-${point.id}">To</label>
@@ -149,7 +154,7 @@ function createEditPointTemplate(point) {
               id="event-end-time-${point.id}"
               type="text"
               name="event-end-time"
-              value="${point.endTime}"
+              value="${getEditDate(point.endDateTime)}"
             >
           </div>
 
@@ -202,6 +207,8 @@ function createEditPointTemplate(point) {
 export default class EditPointView extends AbstractStatefulView {
   #handleFormSubmit = null;
   #handleRollupClick = null;
+  #startDatepicker = null;
+  #endDatepicker = null;
 
   constructor({point, onFormSubmit, onRollupClick}) {
     super();
@@ -216,11 +223,60 @@ export default class EditPointView extends AbstractStatefulView {
     return createEditPointTemplate(this._state);
   }
 
+  removeElement() {
+    super.removeElement();
+
+    this.#destroyDatepickers();
+  }
+
   _restoreHandlers() {
+    this.#destroyDatepickers();
+
     this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#rollupClickHandler);
     this.element.querySelector('.event__type-group').addEventListener('change', this.#eventTypeChangeHandler);
     this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationChangeHandler);
+
+    this.#setStartDatepicker();
+    this.#setEndDatepicker();
+  }
+
+  #setStartDatepicker() {
+    this.#startDatepicker = flatpickr(
+      this.element.querySelector(`#event-start-time-${this._state.id}`),
+      {
+        dateFormat: FLATPICKR_DATE_FORMAT,
+        defaultDate: this._state.startDateTime,
+        enableTime: true,
+        'time_24hr': true,
+        onChange: this.#startDateChangeHandler,
+      },
+    );
+  }
+
+  #setEndDatepicker() {
+    this.#endDatepicker = flatpickr(
+      this.element.querySelector(`#event-end-time-${this._state.id}`),
+      {
+        dateFormat: FLATPICKR_DATE_FORMAT,
+        defaultDate: this._state.endDateTime,
+        enableTime: true,
+        'time_24hr': true,
+        onChange: this.#endDateChangeHandler,
+      },
+    );
+  }
+
+  #destroyDatepickers() {
+    if (this.#startDatepicker) {
+      this.#startDatepicker.destroy();
+      this.#startDatepicker = null;
+    }
+
+    if (this.#endDatepicker) {
+      this.#endDatepicker.destroy();
+      this.#endDatepicker = null;
+    }
   }
 
   #formSubmitHandler = (evt) => {
@@ -258,6 +314,18 @@ export default class EditPointView extends AbstractStatefulView {
     this.updateElement({
       destinationId: destination.id,
       destination,
+    });
+  };
+
+  #startDateChangeHandler = ([userDate]) => {
+    this.updateElement({
+      startDateTime: userDate.toISOString(),
+    });
+  };
+
+  #endDateChangeHandler = ([userDate]) => {
+    this.updateElement({
+      endDateTime: userDate.toISOString(),
     });
   };
 

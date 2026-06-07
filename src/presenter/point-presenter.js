@@ -1,4 +1,5 @@
 import {remove, render, replace} from '../framework/render.js';
+import {getEventDate, getEventDuration, getEventTime} from '../utils/point.js';
 import PointView from '../view/point-view.js';
 import EditPointView from '../view/edit-point-view.js';
 
@@ -18,6 +19,11 @@ function createPointData(point, destinations, offers) {
   return {
     ...point,
     destination,
+    date: getEventDate(point.startDateTime),
+    dateTime: point.startDateTime,
+    startTime: getEventTime(point.startDateTime),
+    endTime: getEventTime(point.endDateTime),
+    duration: getEventDuration(point.startDateTime, point.endDateTime),
     title: `${point.type} ${destination.name}`,
     selectedOffers: getSelectedOffers(offers, point.offerIds),
   };
