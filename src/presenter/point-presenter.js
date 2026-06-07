@@ -1,4 +1,4 @@
-import {render, replace} from '../framework/render.js';
+import {remove, render, replace} from '../framework/render.js';
 import PointView from '../view/point-view.js';
 import EditPointView from '../view/edit-point-view.js';
 
@@ -106,8 +106,14 @@ export default class PointPresenter {
       replace(this.#editPointComponent, previousEditPointComponent);
     }
 
-    previousPointComponent.removeElement();
-    previousEditPointComponent.removeElement();
+    remove(previousPointComponent);
+    remove(previousEditPointComponent);
+  }
+
+  destroy() {
+    remove(this.#pointComponent);
+    remove(this.#editPointComponent);
+    document.removeEventListener('keydown', this.#escKeydownHandler);
   }
 
   resetView() {
