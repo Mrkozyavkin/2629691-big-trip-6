@@ -1,4 +1,6 @@
+import {filters} from '../mock/filter.js';
 import {destinations, editPoint, eventTypes, newPoint, offers, points} from '../mock/point.js';
+import {sorts} from '../mock/sort.js';
 
 export default class PointsModel {
   #points = points;
@@ -7,6 +9,8 @@ export default class PointsModel {
   #eventTypes = eventTypes;
   #newPoint = newPoint;
   #editPoint = editPoint;
+  #filters = filters;
+  #sorts = sorts;
 
   get points() {
     return this.#points;
@@ -30,5 +34,13 @@ export default class PointsModel {
 
   get editPoint() {
     return this.#editPoint;
+  }
+
+  get filters() {
+    return this.#filters;
+  }
+
+  get sorts() {
+    return this.#sorts;
   }
 }

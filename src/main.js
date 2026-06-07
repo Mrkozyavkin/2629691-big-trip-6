@@ -11,7 +11,7 @@ const pointsModel = new PointsModel();
 
 tripEventsElement.remove();
 
-render(new FilterView(), tripControlsFiltersElement);
+render(new FilterView({filters: pointsModel.filters}), tripControlsFiltersElement);
 
 const boardPresenter = new BoardPresenter({
   boardContainer: siteMainElement,
