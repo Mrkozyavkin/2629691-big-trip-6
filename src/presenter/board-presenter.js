@@ -4,6 +4,7 @@ import TripEventsView from '../view/trip-events-view.js';
 import TripEventsListView from '../view/trip-events-list-view.js';
 import PointView from '../view/point-view.js';
 import EditPointView from '../view/edit-point-view.js';
+import NoPointView from '../view/no-point-view.js';
 
 const POINTS_COUNT = 3;
 const ESCAPE_KEY = 'Escape';
@@ -57,10 +58,20 @@ export default class BoardPresenter {
 
   init() {
     render(this.#tripEventsComponent, this.#boardContainer);
-    render(new SortView(), this.#tripEventsComponent.element);
+
+    if (this.#pointsModel.points.length === 0) {
+      this.#renderNoPoints();
+      return;
+    }
+
+    render(new SortView({sorts: this.#pointsModel.sorts}), this.#tripEventsComponent.element);
     render(this.#tripEventsListComponent, this.#tripEventsComponent.element);
 
     this.#renderPoints();
+  }
+
+  #renderNoPoints() {
+    render(new NoPointView(), this.#tripEventsComponent.element);
   }
 
   #renderPoint(point) {
