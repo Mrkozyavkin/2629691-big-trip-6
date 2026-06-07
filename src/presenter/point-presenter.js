@@ -1,4 +1,5 @@
 import {remove, render, replace} from '../framework/render.js';
+import {UpdateType, UserAction} from '../const.js';
 import {getEventDate, getEventDuration, getEventTime} from '../utils/point.js';
 import PointView from '../view/point-view.js';
 import EditPointView from '../view/edit-point-view.js';
@@ -140,7 +141,11 @@ export default class PointPresenter {
   };
 
   #handleFormSubmit = (updatedPoint) => {
-    this.#handleDataChange(updatedPoint);
+    this.#handleDataChange(
+      UserAction.UPDATE_POINT,
+      UpdateType.PATCH,
+      updatedPoint,
+    );
   };
 
   #handleRollupClick = () => {
@@ -148,10 +153,14 @@ export default class PointPresenter {
   };
 
   #handleFavoriteClick = () => {
-    this.#handleDataChange({
-      ...this.#point,
-      isFavorite: !this.#point.isFavorite,
-    });
+    this.#handleDataChange(
+      UserAction.UPDATE_POINT,
+      UpdateType.PATCH,
+      {
+        ...this.#point,
+        isFavorite: !this.#point.isFavorite,
+      },
+    );
   };
 
   #escKeydownHandler = (evt) => {
