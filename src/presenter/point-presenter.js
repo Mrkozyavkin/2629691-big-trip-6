@@ -94,6 +94,7 @@ export default class PointPresenter {
       point: formData,
       onFormSubmit: this.#handleFormSubmit,
       onRollupClick: this.#handleRollupClick,
+      onDeleteClick: this.#handleDeleteClick,
     });
 
     if (previousPointComponent === null || previousEditPointComponent === null) {
@@ -121,6 +122,7 @@ export default class PointPresenter {
 
   resetView() {
     if (this.#pointContainer.contains(this.#editPointComponent.element)) {
+      this.#resetForm();
       this.#replaceFormToPoint();
     }
   }
@@ -135,37 +137,90 @@ export default class PointPresenter {
     document.removeEventListener('keydown', this.#escKeydownHandler);
   }
 
+  #resetForm() {
+    const formData = createFormData(
+      this.#point,
+      this.#destinations,
+      this.#offers,
+      this.#eventTypes,
+    );
+
+    this.#editPointComponent.reset(formData);
+  }
+
   #handleEditClick = () => {
     this.#handleModeChange();
     this.#replacePointToForm();
   };
 
-  #handleFormSubmit = (updatedPoint) => {
-    this.#handleDataChange(
-      UserAction.UPDATE_POINT,
-      UpdateType.PATCH,
-      updatedPoint,
-    );
+  #handleFormSubmit = async (updatedPoint) => {
+    this.#editPointComponent.setSaving();
+
+    try {
+      await this.#handleDataChange(
+        UserAction.UPDATE_POINT,
+        UpdateType.MINOR,
+        updatedPoint,
+      );
+    } catch (err) {
+      this.#editPointComponent.reset(
+        createFormData(
+          updatedPoint,
+          this.#destinations,
+          this.#offers,
+          this.#eventTypes,
+        ),
+      );
+      this.#editPointComponent.shake();
+    }
   };
 
   #handleRollupClick = () => {
+    this.#resetForm();
     this.#replaceFormToPoint();
   };
 
-  #handleFavoriteClick = () => {
-    this.#handleDataChange(
-      UserAction.UPDATE_POINT,
-      UpdateType.PATCH,
-      {
-        ...this.#point,
-        isFavorite: !this.#point.isFavorite,
-      },
-    );
+  #handleDeleteClick = async (deletedPoint) => {
+    this.#editPointComponent.setDeleting();
+
+    try {
+      await this.#handleDataChange(
+        UserAction.DELETE_POINT,
+        UpdateType.MINOR,
+        deletedPoint,
+      );
+    } catch (err) {
+      this.#editPointComponent.reset(
+        createFormData(
+          this.#point,
+          this.#destinations,
+          this.#offers,
+          this.#eventTypes,
+        ),
+      );
+      this.#editPointComponent.shake();
+    }
+  };
+
+  #handleFavoriteClick = async () => {
+    try {
+      await this.#handleDataChange(
+        UserAction.UPDATE_POINT,
+        UpdateType.PATCH,
+        {
+          ...this.#point,
+          isFavorite: !this.#point.isFavorite,
+        },
+      );
+    } catch (err) {
+      this.#pointComponent.shake();
+    }
   };
 
   #escKeydownHandler = (evt) => {
     if (evt.key === ESCAPE_KEY) {
       evt.preventDefault();
+      this.#resetForm();
       this.#replaceFormToPoint();
     }
   };

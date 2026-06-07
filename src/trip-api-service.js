@@ -43,10 +43,14 @@ function adaptPointToServer(point) {
 }
 
 function adaptDestinationToClient(destination) {
-  return {
+  const adaptedDestination = {
     ...destination,
     photos: destination.pictures,
   };
+
+  delete adaptedDestination.pictures;
+
+  return adaptedDestination;
 }
 
 function adaptOfferToClient(offerGroup) {
@@ -86,5 +90,25 @@ export default class TripApiService extends ApiService {
     const parsedResponse = await ApiService.parseResponse(response);
 
     return adaptPointToClient(parsedResponse);
+  }
+
+  async addPoint(point) {
+    const response = await this._load({
+      url: 'points',
+      method: 'POST',
+      body: JSON.stringify(adaptPointToServer(point)),
+      headers: new Headers({'Content-Type': 'application/json'}),
+    });
+
+    const parsedResponse = await ApiService.parseResponse(response);
+
+    return adaptPointToClient(parsedResponse);
+  }
+
+  async deletePoint(point) {
+    await this._load({
+      url: `points/${point.id}`,
+      method: 'DELETE',
+    });
   }
 }
