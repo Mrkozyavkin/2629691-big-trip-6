@@ -86,6 +86,22 @@ export default class PointView extends AbstractView {
     return createPointTemplate(this.#point);
   }
 
+  shake() {
+    this.element.animate(
+      [
+        {transform: 'translateX(0)'},
+        {transform: 'translateX(-10px)'},
+        {transform: 'translateX(10px)'},
+        {transform: 'translateX(-10px)'},
+        {transform: 'translateX(10px)'},
+        {transform: 'translateX(0)'},
+      ],
+      {
+        duration: 600,
+      },
+    );
+  }
+
   #editClickHandler = (evt) => {
     evt.preventDefault();
     this.#handleEditClick();

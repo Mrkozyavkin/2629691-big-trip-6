@@ -9,8 +9,13 @@ function getDestinationByName(destinations, destinationName) {
   return destinations.find((destination) => destination.name === destinationName);
 }
 
-function createEventTypeTemplate(eventType, checkedType, pointId) {
+function createDisabledAttribute(isDisabled) {
+  return isDisabled ? ' disabled' : '';
+}
+
+function createEventTypeTemplate(eventType, checkedType, pointId, isDisabled) {
   const isChecked = eventType === checkedType ? ' checked' : '';
+  const disabledAttribute = createDisabledAttribute(isDisabled);
 
   return (
     `<div class="event__type-item">
@@ -21,6 +26,7 @@ function createEventTypeTemplate(eventType, checkedType, pointId) {
         name="event-type"
         value="${eventType}"
         ${isChecked}
+        ${disabledAttribute}
       >
       <label
         class="event__type-label  event__type-label--${eventType}"
@@ -36,8 +42,9 @@ function createDestinationOptionTemplate(destination) {
   return `<option value="${destination.name}"></option>`;
 }
 
-function createOfferTemplate(offer, offerIds, pointId) {
+function createOfferTemplate(offer, offerIds, pointId, isDisabled) {
   const isChecked = offerIds.includes(offer.id) ? ' checked' : '';
+  const disabledAttribute = createDisabledAttribute(isDisabled);
 
   return (
     `<div class="event__offer-selector">
@@ -47,6 +54,7 @@ function createOfferTemplate(offer, offerIds, pointId) {
         type="checkbox"
         name="event-offer-${offer.id}"
         ${isChecked}
+        ${disabledAttribute}
       >
       <label class="event__offer-label" for="event-offer-${offer.id}-${pointId}">
         <span class="event__offer-title">${offer.title}</span>
@@ -63,7 +71,7 @@ function createPhotoTemplate(photo) {
 
 function createEventTypesTemplate(point) {
   return point.eventTypes
-    .map((eventType) => createEventTypeTemplate(eventType, point.type, point.id))
+    .map((eventType) => createEventTypeTemplate(eventType, point.type, point.id, point.isDisabled))
     .join('');
 }
 
@@ -76,7 +84,7 @@ function createDestinationsTemplate(destinations) {
 function createOffersTemplate(point) {
   return point.offers
     .filter((offer) => offer.type === point.type)
-    .map((offer) => createOfferTemplate(offer, point.offerIds, point.id))
+    .map((offer) => createOfferTemplate(offer, point.offerIds, point.id, point.isDisabled))
     .join('');
 }
 
@@ -91,6 +99,9 @@ function createEditPointTemplate(point) {
   const destinationsTemplate = createDestinationsTemplate(point.destinations);
   const offersTemplate = createOffersTemplate(point);
   const photosTemplate = createPhotosTemplate(point.destination.photos);
+  const disabledAttribute = createDisabledAttribute(point.isDisabled);
+  const saveButtonText = point.isSaving ? 'Saving...' : 'Save';
+  const deleteButtonText = point.isDeleting ? 'Deleting...' : 'Delete';
 
   return (
     `<li class="trip-events__item">
@@ -111,6 +122,7 @@ function createEditPointTemplate(point) {
               class="event__type-toggle  visually-hidden"
               id="event-type-toggle-${point.id}"
               type="checkbox"
+              ${disabledAttribute}
             >
 
             <div class="event__type-list">
@@ -132,6 +144,7 @@ function createEditPointTemplate(point) {
               name="event-destination"
               value="${point.destination.name}"
               list="destination-list-${point.id}"
+              ${disabledAttribute}
             >
             <datalist id="destination-list-${point.id}">
               ${destinationsTemplate}
@@ -146,6 +159,7 @@ function createEditPointTemplate(point) {
               type="text"
               name="event-start-time"
               value="${getEditDate(point.startDateTime)}"
+              ${disabledAttribute}
             >
             &mdash;
             <label class="visually-hidden" for="event-end-time-${point.id}">To</label>
@@ -155,6 +169,7 @@ function createEditPointTemplate(point) {
               type="text"
               name="event-end-time"
               value="${getEditDate(point.endDateTime)}"
+              ${disabledAttribute}
             >
           </div>
 
@@ -170,12 +185,17 @@ function createEditPointTemplate(point) {
               min="0"
               name="event-price"
               value="${point.price}"
+              ${disabledAttribute}
             >
           </div>
 
-          <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
-          <button class="event__reset-btn" type="reset">Delete</button>
-          <button class="event__rollup-btn" type="button">
+          <button class="event__save-btn  btn  btn--blue" type="submit" ${disabledAttribute}>
+            ${saveButtonText}
+          </button>
+          <button class="event__reset-btn" type="reset" ${disabledAttribute}>
+            ${deleteButtonText}
+          </button>
+          <button class="event__rollup-btn" type="button" ${disabledAttribute}>
             <span class="visually-hidden">Open event</span>
           </button>
         </header>
@@ -208,14 +228,16 @@ function createEditPointTemplate(point) {
 export default class EditPointView extends AbstractStatefulView {
   #handleFormSubmit = null;
   #handleRollupClick = null;
+  #handleDeleteClick = null;
   #startDatepicker = null;
   #endDatepicker = null;
 
-  constructor({point, onFormSubmit, onRollupClick}) {
+  constructor({point, onFormSubmit, onRollupClick, onDeleteClick}) {
     super();
     this._setState(EditPointView.parsePointToState(point));
     this.#handleFormSubmit = onFormSubmit;
     this.#handleRollupClick = onRollupClick;
+    this.#handleDeleteClick = onDeleteClick;
 
     this._restoreHandlers();
   }
@@ -230,11 +252,46 @@ export default class EditPointView extends AbstractStatefulView {
     this.#destroyDatepickers();
   }
 
+  reset(point) {
+    this.updateElement(EditPointView.parsePointToState(point));
+  }
+
+  setSaving() {
+    this.updateElement({
+      isDisabled: true,
+      isSaving: true,
+    });
+  }
+
+  setDeleting() {
+    this.updateElement({
+      isDisabled: true,
+      isDeleting: true,
+    });
+  }
+
+  shake() {
+    this.element.animate(
+      [
+        {transform: 'translateX(0)'},
+        {transform: 'translateX(-10px)'},
+        {transform: 'translateX(10px)'},
+        {transform: 'translateX(-10px)'},
+        {transform: 'translateX(10px)'},
+        {transform: 'translateX(0)'},
+      ],
+      {
+        duration: 600,
+      },
+    );
+  }
+
   _restoreHandlers() {
     this.#destroyDatepickers();
 
     this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#rollupClickHandler);
+    this.element.querySelector('.event__reset-btn').addEventListener('click', this.#deleteClickHandler);
     this.element.querySelector('.event__type-group').addEventListener('change', this.#eventTypeChangeHandler);
     this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationChangeHandler);
     this.element.querySelector('.event__input--price').addEventListener('input', this.#priceInputHandler);
@@ -291,6 +348,11 @@ export default class EditPointView extends AbstractStatefulView {
     this.#handleRollupClick();
   };
 
+  #deleteClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleDeleteClick(EditPointView.parseStateToPoint(this._state));
+  };
+
   #eventTypeChangeHandler = (evt) => {
     if (!evt.target.classList.contains('event__type-input')) {
       return;
@@ -340,6 +402,9 @@ export default class EditPointView extends AbstractStatefulView {
   static parsePointToState(point) {
     return {
       ...point,
+      isDisabled: false,
+      isSaving: false,
+      isDeleting: false,
     };
   }
 
@@ -351,6 +416,9 @@ export default class EditPointView extends AbstractStatefulView {
     delete point.eventTypes;
     delete point.destination;
     delete point.selectedOffers;
+    delete point.isDisabled;
+    delete point.isSaving;
+    delete point.isDeleting;
 
     return point;
   }

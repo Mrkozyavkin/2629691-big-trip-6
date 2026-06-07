@@ -1,3 +1,4 @@
+import UiBlocker from '../framework/ui-blocker/ui-blocker.js';
 import {remove, render} from '../framework/render.js';
 import {UpdateType, UserAction} from '../const.js';
 import {filter} from '../utils/filter.js';
@@ -9,6 +10,11 @@ import LoadingView from '../view/loading-view.js';
 import PointPresenter from './point-presenter.js';
 
 const POINTS_COUNT = 3;
+
+const TimeLimit = {
+  LOWER_LIMIT: 350,
+  UPPER_LIMIT: 1000,
+};
 
 const SortType = {
   DAY: 'day',
@@ -47,6 +53,11 @@ export default class BoardPresenter {
   #points = [];
   #currentSortType = SortType.DAY;
   #isLoading = true;
+
+  #uiBlocker = new UiBlocker({
+    lowerLimit: TimeLimit.LOWER_LIMIT,
+    upperLimit: TimeLimit.UPPER_LIMIT,
+  });
 
   constructor({boardContainer, pointsModel, filterModel}) {
     this.#boardContainer = boardContainer;
@@ -167,17 +178,23 @@ export default class BoardPresenter {
     this.#tripEventsListComponent = new TripEventsListView();
   }
 
-  #handleViewAction = (actionType, updateType, updatedPoint) => {
-    switch (actionType) {
-      case UserAction.UPDATE_POINT:
-        this.#pointsModel.updatePoint(updateType, updatedPoint);
-        break;
-      case UserAction.ADD_POINT:
-        this.#pointsModel.addPoint(updateType, updatedPoint);
-        break;
-      case UserAction.DELETE_POINT:
-        this.#pointsModel.deletePoint(updateType, updatedPoint);
-        break;
+  #handleViewAction = async (actionType, updateType, updatedPoint) => {
+    this.#uiBlocker.block();
+
+    try {
+      switch (actionType) {
+        case UserAction.UPDATE_POINT:
+          await this.#pointsModel.updatePoint(updateType, updatedPoint);
+          break;
+        case UserAction.ADD_POINT:
+          await this.#pointsModel.addPoint(updateType, updatedPoint);
+          break;
+        case UserAction.DELETE_POINT:
+          await this.#pointsModel.deletePoint(updateType, updatedPoint);
+          break;
+      }
+    } finally {
+      this.#uiBlocker.unblock();
     }
   };
 
